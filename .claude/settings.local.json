@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find \"/c/Users/sebas/Documents/GitHub/Vecto\" -name \"*.png\" -o -name \"*.jpg\" -o -name \"*.svg\" 2>/dev/null | grep -v node_modules | grep -v vendor | head -30)"
+    ]
+  }
+}
