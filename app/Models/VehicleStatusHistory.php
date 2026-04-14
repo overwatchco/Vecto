@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class VehicleStatusHistory extends Model
 {
+    protected $table = 'vehicle_status_history';
+
     protected $fillable = ['vehicle_id', 'user_id', 'from_status', 'to_status', 'reason'];
 
     public function vehicle(): BelongsTo
