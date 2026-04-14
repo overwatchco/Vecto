@@ -22,12 +22,32 @@ class VehicleController extends Controller
             : Vehicle::where('company_id', $user->company_id);
     }
 
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        $vehicles = $this->companyScope()
-            ->with('company')
-            ->orderBy('plate')
-            ->get()
+        $query = $this->companyScope()->with('company');
+
+        if ($search = $request->query('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('plate', 'like', "%{$search}%")
+                  ->orWhere('brand', 'like', "%{$search}%")
+                  ->orWhere('model', 'like', "%{$search}%")
+                  ->orWhere('vin',   'like', "%{$search}%");
+            });
+        }
+
+        if ($status = $request->query('status')) {
+            $query->where('status', $status);
+        }
+
+        $all      = $this->companyScope();
+        $stats    = [
+            'total'       => (clone $all)->count(),
+            'active'      => (clone $all)->where('status', 'active')->count(),
+            'maintenance' => (clone $all)->where('status', 'maintenance')->count(),
+            'inactive'    => (clone $all)->where('status', 'inactive')->count(),
+        ];
+
+        $vehicles = $query->orderBy('plate')->get()
             ->map(fn (Vehicle $v) => [
                 'id'           => $v->id,
                 'plate'        => $v->plate,
@@ -36,6 +56,7 @@ class VehicleController extends Controller
                 'model'        => $v->model,
                 'year'         => $v->year,
                 'color'        => $v->color,
+                'vin'          => $v->vin,
                 'status'       => $v->status,
                 'photo'        => $v->photo ? Storage::url($v->photo) : null,
                 'company_name' => $v->company->name ?? null,
@@ -43,6 +64,8 @@ class VehicleController extends Controller
 
         return Inertia::render('fleet/vehicles/index', [
             'vehicles' => $vehicles,
+            'stats'    => $stats,
+            'filters'  => ['search' => $request->query('search', ''), 'status' => $request->query('status', '')],
         ]);
     }
 
