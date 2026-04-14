@@ -9,14 +9,12 @@ export default function AppSidebarLayout({
     breadcrumbs = [],
 }: AppLayoutProps) {
     return (
-        <div className="dark" style={{ background: '#000', minHeight: '100vh', colorScheme: 'dark' }}>
-            <AppShell variant="sidebar">
-                <AppSidebar />
-                <AppContent variant="sidebar" className="overflow-x-hidden">
-                    <AppSidebarHeader breadcrumbs={breadcrumbs} />
-                    {children}
-                </AppContent>
-            </AppShell>
-        </div>
+        <AppShell variant="sidebar">
+            <AppSidebar />
+            <AppContent variant="sidebar" className="overflow-x-hidden">
+                <AppSidebarHeader breadcrumbs={breadcrumbs} />
+                {children}
+            </AppContent>
+        </AppShell>
     );
 }
