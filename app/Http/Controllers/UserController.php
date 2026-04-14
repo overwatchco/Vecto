@@ -17,19 +17,20 @@ class UserController extends Controller
     {
         abort_if(! auth()->user()->isAdmin(), 403);
 
-        $users = User::where('company_id', auth()->user()->company_id)
-            ->orderBy('name')
-            ->get()
-            ->map(fn (User $u) => [
-                'id'         => $u->id,
-                'name'       => $u->name,
-                'email'      => $u->email,
-                'phone'      => $u->phone,
-                'position'   => $u->position,
-                'role'       => $u->role->value,
-                'role_label' => $u->role->label(),
-                'created_at' => $u->created_at->format('d/m/Y'),
-            ]);
+        $query = auth()->user()->isSuperAdmin()
+            ? User::orderBy('name')
+            : User::where('company_id', auth()->user()->company_id)->orderBy('name');
+
+        $users = $query->get()->map(fn (User $u) => [
+            'id'         => $u->id,
+            'name'       => $u->name,
+            'email'      => $u->email,
+            'phone'      => $u->phone,
+            'position'   => $u->position,
+            'role'       => $u->role->value,
+            'role_label' => $u->role->label(),
+            'created_at' => $u->created_at->format('d/m/Y'),
+        ]);
 
         return Inertia::render('users/index', [
             'users' => $users,
@@ -40,8 +41,12 @@ class UserController extends Controller
     {
         abort_if(! auth()->user()->isAdmin(), 403);
 
+        $roles = auth()->user()->isSuperAdmin()
+            ? UserRole::options()
+            : UserRole::companyOptions();
+
         return Inertia::render('users/create', [
-            'roles' => UserRole::options(),
+            'roles' => $roles,
         ]);
     }
 
@@ -64,7 +69,11 @@ class UserController extends Controller
     public function edit(User $user): Response
     {
         abort_if(! auth()->user()->isAdmin(), 403);
-        abort_if($user->company_id !== auth()->user()->company_id, 403);
+        abort_if(! auth()->user()->isSuperAdmin() && $user->company_id !== auth()->user()->company_id, 403);
+
+        $roles = auth()->user()->isSuperAdmin()
+            ? UserRole::options()
+            : UserRole::companyOptions();
 
         return Inertia::render('users/edit', [
             'user'  => [
@@ -75,13 +84,13 @@ class UserController extends Controller
                 'position' => $user->position,
                 'role'     => $user->role->value,
             ],
-            'roles' => UserRole::options(),
+            'roles' => $roles,
         ]);
     }
 
     public function update(UpdateUserRequest $request, User $user): RedirectResponse
     {
-        abort_if($user->company_id !== auth()->user()->company_id, 403);
+        abort_if(! auth()->user()->isSuperAdmin() && $user->company_id !== auth()->user()->company_id, 403);
 
         $data = $request->only(['name', 'email', 'role', 'phone', 'position']);
 
@@ -98,7 +107,7 @@ class UserController extends Controller
     public function destroy(User $user): RedirectResponse
     {
         abort_if(! auth()->user()->isAdmin(), 403);
-        abort_if($user->company_id !== auth()->user()->company_id, 403);
+        abort_if(! auth()->user()->isSuperAdmin() && $user->company_id !== auth()->user()->company_id, 403);
         abort_if($user->id === auth()->id(), 403, 'No puedes eliminar tu propio usuario.');
 
         $user->delete();

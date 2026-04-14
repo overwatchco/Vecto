@@ -35,10 +35,10 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
-            'email_verified_at'        => 'datetime',
-            'password'                 => 'hashed',
-            'two_factor_confirmed_at'  => 'datetime',
-            'role'                     => UserRole::class,
+            'email_verified_at'       => 'datetime',
+            'password'                => 'hashed',
+            'two_factor_confirmed_at' => 'datetime',
+            'role'                    => UserRole::class,
         ];
     }
 
@@ -47,13 +47,39 @@ class User extends Authenticatable
         return $this->belongsTo(Company::class);
     }
 
-    public function isAdmin(): bool
+    public function isSuperAdmin(): bool
     {
-        return $this->role === UserRole::Admin;
+        return $this->role === UserRole::Superadmin;
     }
 
+    public function isCompanyAdmin(): bool
+    {
+        return $this->role === UserRole::CompanyAdmin;
+    }
+
+    public function isOperator(): bool
+    {
+        return $this->role === UserRole::Operator;
+    }
+
+    /** Backward-compat alias — admins are superadmins or company admins */
+    public function isAdmin(): bool
+    {
+        return $this->isSuperAdmin() || $this->isCompanyAdmin();
+    }
+
+    /** @deprecated use isOperator() */
     public function isEmployee(): bool
     {
-        return $this->role === UserRole::Employee;
+        return $this->isOperator();
+    }
+
+    public function getDashboardRoute(): string
+    {
+        return match ($this->role) {
+            UserRole::Superadmin   => '/admin/dashboard',
+            UserRole::CompanyAdmin => '/empresa/dashboard',
+            default                => '/dashboard',
+        };
     }
 }

@@ -1,9 +1,11 @@
+export type UserRole = 'superadmin' | 'company_admin' | 'operator';
+
 export type User = {
     id: number;
     name: string;
     email: string;
     avatar?: string;
-    role: 'admin' | 'employee';
+    role: UserRole;
     company_id: number | null;
     phone: string | null;
     position: string | null;
