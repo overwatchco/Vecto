@@ -20,17 +20,26 @@ const inputClass =
 
 const labelClass = 'text-[11px] font-semibold uppercase tracking-widest text-white/40';
 
-export default function VehicleCreate() {
+type Option = { value: number; label: string };
+
+export default function VehicleCreate({
+    companies = [],
+    isSuperAdmin = false,
+}: {
+    companies?: Option[];
+    isSuperAdmin?: boolean;
+}) {
     const { data, setData, post, processing, errors } = useForm({
-        plate:  '',
-        type:   '',
-        brand:  '',
-        model:  '',
-        year:   new Date().getFullYear(),
-        color:  '',
-        vin:    '',
-        status: 'active',
-        notes:  '',
+        plate:      '',
+        type:       '',
+        brand:      '',
+        model:      '',
+        year:       new Date().getFullYear(),
+        color:      '',
+        vin:        '',
+        status:     'active',
+        notes:      '',
+        company_id: '',
     });
 
     return (
@@ -115,6 +124,21 @@ export default function VehicleCreate() {
                                 </SelectContent>
                             </Select>
                         </div>
+
+                        {isSuperAdmin && (
+                            <div className="flex flex-col gap-1.5 sm:col-span-2">
+                                <Label className={labelClass}>Empresa *</Label>
+                                <Select value={String(data.company_id)} onValueChange={v => setData('company_id', v)}>
+                                    <SelectTrigger className={inputClass}><SelectValue placeholder="Seleccionar empresa" /></SelectTrigger>
+                                    <SelectContent>
+                                        {companies.map(c => (
+                                            <SelectItem key={c.value} value={String(c.value)}>{c.label}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <InputError message={errors.company_id} />
+                            </div>
+                        )}
 
                         <div className="flex flex-col gap-1.5 sm:col-span-2">
                             <Label className={labelClass}>Notas</Label>

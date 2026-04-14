@@ -71,28 +71,41 @@ class VehicleController extends Controller
 
     public function create(): Response
     {
-        return Inertia::render('fleet/vehicles/create');
+        $user      = auth()->user();
+        $companies = $user->isSuperAdmin()
+            ? \App\Models\Company::where('is_active', true)->orderBy('name')->get(['id', 'name'])
+                ->map(fn ($c) => ['value' => $c->id, 'label' => $c->name])
+            : collect();
+
+        return Inertia::render('fleet/vehicles/create', [
+            'companies'  => $companies,
+            'isSuperAdmin' => $user->isSuperAdmin(),
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
     {
+        $user = auth()->user();
+
         $data = $request->validate([
-            'plate'  => 'required|string|max:20|unique:vehicles',
-            'type'   => 'required|string|max:50',
-            'brand'  => 'required|string|max:50',
-            'model'  => 'required|string|max:50',
-            'year'   => 'required|integer|min:1990|max:' . (date('Y') + 1),
-            'color'  => 'nullable|string|max:30',
-            'vin'    => 'nullable|string|max:50|unique:vehicles',
-            'status' => 'required|in:active,inactive,maintenance',
-            'photo'  => 'nullable|image|max:2048',
-            'notes'  => 'nullable|string',
+            'plate'      => 'required|string|max:20|unique:vehicles',
+            'type'       => 'required|string|max:50',
+            'brand'      => 'required|string|max:50',
+            'model'      => 'required|string|max:50',
+            'year'       => 'required|integer|min:1990|max:' . (date('Y') + 1),
+            'color'      => 'nullable|string|max:30',
+            'vin'        => 'nullable|string|max:50|unique:vehicles',
+            'status'     => 'required|in:active,inactive,maintenance',
+            'photo'      => 'nullable|image|max:2048',
+            'notes'      => 'nullable|string',
+            'company_id' => $user->isSuperAdmin() ? 'required|exists:companies,id' : 'nullable',
         ]);
 
-        $user = auth()->user();
         $data['company_id'] = $user->isSuperAdmin()
-            ? $request->validate(['company_id' => 'required|exists:companies,id'])['company_id']
+            ? $data['company_id']
             : $user->company_id;
+
+        abort_if(empty($data['company_id']), 422, 'No se pudo determinar la empresa. Asegúrate de que tu usuario tenga una empresa asignada.');
 
         if ($request->hasFile('photo')) {
             $data['photo'] = $request->file('photo')->store('vehicles', 'public');
